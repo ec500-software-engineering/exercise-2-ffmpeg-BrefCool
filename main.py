@@ -136,7 +136,7 @@ class MainForm(npyscreen.ActionForm):
 		self.keypress_timeout_default = 1
 		self.process_fields = []
 		self.fn = self.add(npyscreen.TitleFilenameCombo, name="filename: ")
-		self.status = self.add(npyscreen.MultiLineEdit, value="Welcome! Please choose mp4 or mov file to encode\n", max_height=10, rely=9)
+		self.status = self.add(npyscreen.MultiLineEdit, value="Welcome! Please choose mp4 or mov file to encode\n", max_height=10, rely=9, editable=False)
 		self.stdout = None
 		for i in range(PROCESS_NUM):
 			process_name = "process {}:".format(i)

@@ -33,3 +33,5 @@ When some of the process finish their jobs. They will start waiting new task:
 <img src='./images/when_finished.png'>  
 At last, press "cancel" to leave the program. It will terminate all the processes:  
 <img src='./images/press_cancel_to_leave.png'>  
+  
+I have prepared three videos in `videos` folder, you can test with it.  
