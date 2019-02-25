@@ -1,18 +1,9 @@
-import os
-import json
 import time
 import npyscreen
-import subprocess
+from encode import encode_c480, encode_c720
 from multiprocessing import Process, Queue, Manager
 
 PROCESS_NUM = 10
-
-def testFunc(task_q, messages, id):
-	while True:
-		messages[id] = 'waiting task'
-		task = task_q.get()
-		messages[id] = task
-		time.sleep(30)
 
 def encode(task_q, messages, id):
 	while True:
@@ -22,90 +13,22 @@ def encode(task_q, messages, id):
 		fout_480p = "".join(parsed[:-1]) + "_480p." + parsed[-1]
 		fout_720p = "".join(parsed[:-1]) + "_720p." + parsed[-1]
 		messages[id] = 'recv file to encode {}'.format(filename)
-		encode_c480(filename, fout_480p, messages, id)
+		time.sleep(0.5)
+		messages[id] = 'converting file({}) to 480p...'.format(filename)
+		succeed, output = encode_c480(filename, fout_480p)
+		if not succeed:
+			messages[id] = 'convert 480p failed.'
+			time.sleep(5)
+			continue
 		time.sleep(1)
-		encode_c720(filename, fout_720p, messages, id)
-
-def ffprobe(fin, fout):
-
-    ffp_in = subprocess.check_output(['ffprobe', '-v', 'warning',
-                                      '-print_format', 'json',
-                                      '-show_streams',
-                                      '-show_format',
-                                      fin])
-    ffp_out = subprocess.check_output(['ffprobe', '-v', 'warning',
-                                       '-print_format', 'json',
-                                       '-show_streams',
-                                       '-show_format',
-                                       fout])
-    ffp_in = json.loads(ffp_in)
-    ffp_out = json.loads(ffp_out)
-
-    duration_in = int(ffp_in['format']['duration'].split('.')[0])
-    duration_out = int(ffp_out['format']['duration'].split('.')[0])
-
-    if duration_in == duration_out:
-        return True
-    else:
-        return False
-
-
-def encode_c480(fin, fout, messages, id):
-	messages[id] = "converting {} (output 480p)...".format(fin)
-	if os.path.exists(fout):
-		os.remove(fout)
-
-	cmd = ['ffmpeg',
-		   '-i', fin,
-		   '-r', '30',
-		   '-s', 'hd480',
-		   '-b:v', '1024k',
-		   '-loglevel', 'quiet',
-		   fout]
-	try:
-		subprocess.check_call(cmd)
-	except OSError:
-		messages[id] = "cmd ffmpeg not found. please install ffmpeg first."
-		return False
-	except subprocess.CalledProcessError as e:
-		messages[id] = "error converting. msg: {}".format(e)
-		return False
-
-	succeed = ffprobe(fin, fout)
-	if succeed:
-		messages[id] = "finished(480p)"
-		return True
-	else:
-		messages[id] = "failed(480p)"
-		return False
-
-def encode_c720(fin, fout, messages, id):
-	messages[id] = "converting {} (output 720p)...".format(fin)
-	if os.path.exists(fout):
-		os.remove(fout)
-	cmd = ['ffmpeg',
-		   '-i', fin,
-		   '-r', '30',
-		   '-s', 'hd720',
-		   '-b:v', '2048k',
-		   '-loglevel', 'quiet',
-		   fout]
-	try:
-		subprocess.check_call(cmd)
-	except OSError:
-		messages[id] = "cmd ffmpeg not found. please install ffmpeg first."
-		return False
-	except subprocess.CalledProcessError as e:
-		messages[id] = "error converting. msg: {}".format(e)
-		return False
-
-	succeed = ffprobe(fin, fout)
-	if succeed:
-		messages[id] = "finished(720p)"
-		return True
-	else:
-		messages[id] = "failed(480p)"
-		return False
+		messages[id] = 'converting file({}) to 720p...'.format(filename)
+		succeed, output = encode_c720(filename, fout_720p)
+		if not succeed:
+			messages[id] = 'convert 720p failed.'
+			time.sleep(5)
+			continue
+		messages[id] = 'Succeess'
+		time.sleep(1)
 
 class VideoEncoderApp(npyscreen.NPSAppManaged):
 	def onStart(self):
